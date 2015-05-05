@@ -69,6 +69,7 @@ void loop()
       buzzerState = LOW;
       timerState = LOW;
 //      digitalWrite(buzzer,buzzerState);
+      switchState = STOP_BUZZED;
     }
     timePressed = millis();
   }

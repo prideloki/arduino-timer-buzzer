@@ -28,7 +28,7 @@ int rButton;
 long timePressed = 0;//don't change the var name
 long debounce = 200;
 
-long startTime = 0;//when the timer start
+long startTime;
 long totalTime = 0;
 int sittingPeriod = 10000;//5*60*1000;// 5 mins
 
@@ -45,7 +45,7 @@ void setup()
   pinMode(leftLED, OUTPUT); 
   pinMode(rightLED, OUTPUT); 
   timer->setOnTimer(&alert);
-
+  startTime = 0;
 }
 
 void loop()
@@ -56,7 +56,6 @@ void loop()
   timer->Update();
   if(reading == HIGH && previous == LOW && millis()-timePressed > debounce){
     if(timerState == LOW){ //start timing
-      totalTime = 0;//reset timer
       startTime = millis();
       timer->Start();
       timerState = HIGH;

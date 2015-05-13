@@ -2,13 +2,13 @@
 //lib https://github.com/aron-bordin/PNG-Arduino-Framework
 
 //inputs outputs
-int buzzer = 6;
-int switchPin = 7;   // pushbutton connected to digital pin 7
-int ledPin = 8; // LED connected to digital pin 8
-int leftButton = 9;
-int rightButton = 10;
-int leftLED = 11;
-int rightLED = 12;
+int buzzer = 4;
+int switchPin = 9;   // pushbutton connected to digital pin 7
+int ledPin = 13; // LED connected to digital pin 8
+int leftButton = 7;
+int rightButton = 5;
+int leftLED = 8;
+int rightLED = 6;
 
 #define BUZZED 0
 #define L1 1
@@ -18,19 +18,23 @@ int rightLED = 12;
 #define STOP_BUZZED 5
 
 int timerState = LOW;     // variable to store the read value
-int reading;
-int previous = LOW;
+int readingSwitch;
+int previousSwitch = LOW;
 int buzzerState = LOW;
 int switchState = STOP_BUZZED;
-int lButton;
-int rButton;
+int lBtnReading;
+int prevLBtn = LOW;
+int rBtnReading;
+int prevRBtn = LOW;
 
-long timePressed = 0;//don't change the var name
+long timePressed = 0;
+long leftBtnPressed = 0;
+long rightBtnPressed = 0;
 long debounce = 200;
 
 long startTime;
 long totalTime = 0;
-int sittingPeriod = 10000;//5*60*1000;// 5 mins
+int sittingPeriod = 5000;//5*60*1000;// 5 mins
 
 Timer *timer = new Timer(sittingPeriod);
 
@@ -46,15 +50,16 @@ void setup()
   pinMode(rightLED, OUTPUT); 
   timer->setOnTimer(&alert);
   startTime = 0;
+  switchState = STOP_BUZZED;
 }
 
 void loop()
 {
-  reading = digitalRead(switchPin);
-  lButton = digitalRead(leftButton);
-  rButton = digitalRead(rightButton);
+  readingSwitch = digitalRead(switchPin);
+  lBtnReading = digitalRead(leftButton);
+  rBtnReading = digitalRead(rightButton);
   timer->Update();
-  if(reading == HIGH && previous == LOW && millis()-timePressed > debounce){
+  if(readingSwitch == HIGH && previousSwitch == LOW && millis()-timePressed > debounce){
     if(timerState == LOW){ //start timing
       startTime = millis();
       timer->Start();
@@ -67,52 +72,62 @@ void loop()
       timer->Stop();
       buzzerState = LOW;
       timerState = LOW;
-//      digitalWrite(buzzer,buzzerState);
+      digitalWrite(leftLED,LOW);
+      digitalWrite(rightLED,LOW);
       switchState = STOP_BUZZED;
     }
     timePressed = millis();
   }
-  if (buzzerState == HIGH){
-    // FSM
-    switch (switchState) {
-      case BUZZED:
-        digitalWrite(leftLED,HIGH);
-        if(lButton ==HIGH && millis()-timePressed > debounce){
-          digitalWrite(rightLED,HIGH);
-          digitalWrite(leftLED,LOW);
-          switchState = L1;
-        }
-        break;
-      case L1:
-        if(rButton == HIGH && millis()-timePressed > debounce){
-          digitalWrite(leftLED,HIGH);
-          digitalWrite(rightLED,LOW);
-          switchState = R1;
-        }
-        break;
-      case R1:
-        if(lButton == HIGH && millis()-timePressed > debounce){
-          digitalWrite(rightLED,HIGH);
-          digitalWrite(leftLED,LOW);
-          switchState = L2;
-        }
-        break;
-      case L2:
-        if(rButton == HIGH && millis()-timePressed > debounce){
-          digitalWrite(rightLED,LOW);
-          switchState = STOP_BUZZED;
-        }
-        break;
-      case STOP_BUZZED:
-        buzzerState = LOW;
-//        digitalWrite(buzzer,buzzerState);
-        break;
-        
+  if(leftButton ==HIGH && prevLBtn == LOW && millis()-timePressed > debounce){
+      if(switchState==BUZZED){
+        switchState = L1;        
+      }
+      if(switchState==R1) {
+        switchState = L2;
+      }
+      leftBtnPressed = millis();
     }
+    
+  if(rightButton == HIGH && prevRBtn == LOW && millis()-timePressed > debounce){
+      if(switchState==L1){
+        switchState = R1;
+      }
+      if(switchState==R2) {
+         switchState = STOP_BUZZED;
+      }
+      rightBtnPressed = millis();
   }
+    
+  switch (switchState) {
+    case BUZZED:
+      digitalWrite(leftLED,HIGH);
+      break;
+    case L1:
+      digitalWrite(rightLED,HIGH);
+      digitalWrite(leftLED,LOW);
+      break;
+    case R1:
+      digitalWrite(leftLED,HIGH);
+      digitalWrite(rightLED,LOW);
+      break;
+    case L2:
+      digitalWrite(rightLED,HIGH);
+      digitalWrite(leftLED,LOW);
+      break;
+    case R2:
+      digitalWrite(rightLED,LOW);
+      break;
+    case STOP_BUZZED:
+      buzzerState = LOW;
+      break;
+        
+  }
+  
   digitalWrite(ledPin,timerState); //led indicate whether the timer is running
   digitalWrite(buzzer,buzzerState);
-  previous = reading;
+  previousSwitch = readingSwitch;
+  prevRBtn = rBtnReading;  
+  prevLBtn = lBtnReading;
 }
 
 void alert(){

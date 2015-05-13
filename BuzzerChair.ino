@@ -50,6 +50,7 @@ void setup()
   pinMode(rightLED, OUTPUT); 
   timer->setOnTimer(&alert);
   startTime = 0;
+  switchState = STOP_BUZZED;
 }
 
 void loop()
@@ -77,42 +78,53 @@ void loop()
     }
     timePressed = millis();
   }
-  if (buzzerState == HIGH){
-    // FSM
-    if(lBtnReading == HIGH && prevLBtn == LOW && millis()-leftBtnPressed > debounce){
-      switch (switchState) {
-        case BUZZED:  
-          digitalWrite(rightLED,HIGH);
-          digitalWrite(leftLED,LOW);
-          switchState = L1;
-          break;
-        case R1:
-          digitalWrite(rightLED,HIGH);
-          digitalWrite(leftLED,LOW);
-          switchState = L2;
-          break;
-          
+
+  if(leftButton ==HIGH && prevLBtn == LOW && millis()-timePressed > debounce){
+      if(switchState==BUZZED){
+        switchState = L1;        
+      }
+      if(switchState==R1) {
+        switchState = L2;
       }
       leftBtnPressed = millis();
+
     }
-    if(rBtnReading == HIGH && prevRBtn == LOW && millis()-rightBtnPressed > debounce){
-      switch (switchState) {
-        case L1:
-          digitalWrite(leftLED,HIGH);
-          digitalWrite(rightLED,LOW);
-          switchState = R1;
-          break;
-        case L2:
-          digitalWrite(rightLED,LOW);
-          switchState = STOP_BUZZED;
-          break;
+    
+  if(rightButton == HIGH && prevRBtn == LOW && millis()-timePressed > debounce){
+      if(switchState==L1){
+        switchState = R1;
+      }
+      if(switchState==R2) {
+         switchState = STOP_BUZZED;
       }
       rightBtnPressed = millis();
-    }
-    if(switchState == STOP_BUZZED){
-      buzzerState = LOW;  
-    }
   }
+    
+  switch (switchState) {
+    case BUZZED:
+      digitalWrite(leftLED,HIGH);
+      break;
+    case L1:
+      digitalWrite(rightLED,HIGH);
+      digitalWrite(leftLED,LOW);
+      break;
+    case R1:
+      digitalWrite(leftLED,HIGH);
+      digitalWrite(rightLED,LOW);
+      break;
+    case L2:
+      digitalWrite(rightLED,HIGH);
+      digitalWrite(leftLED,LOW);
+      break;
+    case R2:
+      digitalWrite(rightLED,LOW);
+      break;
+    case STOP_BUZZED:
+      buzzerState = LOW;
+      break;
+        
+  }
+  
   digitalWrite(ledPin,timerState); //led indicate whether the timer is running
   digitalWrite(buzzer,buzzerState);
   previousSwitch = readingSwitch;

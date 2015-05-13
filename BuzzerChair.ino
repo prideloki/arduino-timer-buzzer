@@ -15,7 +15,8 @@ int rightLED = 6;
 #define R1 2
 #define L2 3
 #define R2 4
-#define STOP_BUZZED 5
+#define STOP_TIMER 5
+#define STOP_BUZZED 6
 
 int timerState = LOW;     // variable to store the read value
 int readingSwitch;
@@ -34,7 +35,7 @@ long debounce = 200;
 
 long startTime;
 long totalTime = 0;
-int sittingPeriod = 5000;//5*60*1000;// 5 mins
+int sittingPeriod = 10*1000;//5*60*1000;// 5 mins
 
 Timer *timer = new Timer(sittingPeriod);
 
@@ -79,7 +80,7 @@ void loop()
     timePressed = millis();
   }
 
-  if(leftButton ==HIGH && prevLBtn == LOW && millis()-timePressed > debounce){
+  if(lBtnReading ==HIGH && prevLBtn == LOW && millis()-leftBtnPressed > debounce){
       if(switchState==BUZZED){
         switchState = L1;        
       }
@@ -90,18 +91,19 @@ void loop()
 
     }
     
-  if(rightButton == HIGH && prevRBtn == LOW && millis()-timePressed > debounce){
+  if(rBtnReading == HIGH && prevRBtn == LOW && millis()-rightBtnPressed > debounce){
       if(switchState==L1){
         switchState = R1;
       }
-      if(switchState==R2) {
-         switchState = STOP_BUZZED;
+      if(switchState==L2) {
+         switchState = R2;
       }
       rightBtnPressed = millis();
   }
     
   switch (switchState) {
     case BUZZED:
+      timer->Stop();
       digitalWrite(leftLED,HIGH);
       break;
     case L1:
@@ -118,11 +120,15 @@ void loop()
       break;
     case R2:
       digitalWrite(rightLED,LOW);
+      switchState = STOP_TIMER;
+      break;
+    case STOP_TIMER:
+      timerState = LOW;
+      switchState = STOP_BUZZED;
       break;
     case STOP_BUZZED:
       buzzerState = LOW;
-      break;
-        
+      break;    
   }
   
   digitalWrite(ledPin,timerState); //led indicate whether the timer is running
